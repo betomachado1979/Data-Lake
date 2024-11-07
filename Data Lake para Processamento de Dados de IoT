@@ -1,0 +1,16 @@
+# Exemplo de processamento de dados de IoT em Spark Streaming
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import from_json, col
+from pyspark.sql.types import StructType, StringType, FloatType
+
+spark = SparkSession.builder.appName("IoTDataProcessing").getOrCreate()
+schema = StructType().add("device_id", StringType()).add("temperature", FloatType()).add("humidity", FloatType())
+
+# Configuração de streaming
+df_stream = spark.readStream.format("kafka").option("kafka.bootstrap.servers", "localhost:9092").option("subscribe", "iot_data").load()
+df_iot = df_stream.select(from_json(col("value").cast("string"), schema).alias("data")).select("data.*")
+
+# Processar e detectar temperaturas altas
+df_high_temp = df_iot.filter(col("temperature") > 30)
+query = df_high_temp.writeStream.format("parquet").option("path", "s3://data-lake/processed/high_temperature/").start()
+query.awaitTermination()
