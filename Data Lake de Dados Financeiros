@@ -1,0 +1,17 @@
+# Exemplo de previsão de dados financeiros usando Prophet
+from fbprophet import Prophet
+import pandas as pd
+
+# Carregar dados financeiros
+data = pd.read_csv("s3://data-lake/raw/financial_data/AAPL.csv")
+data['ds'] = pd.to_datetime(data['date'])
+data['y'] = data['close']
+
+# Treinando o modelo Prophet
+model = Prophet()
+model.fit(data[['ds', 'y']])
+
+# Fazendo previsão
+future = model.make_future_dataframe(periods=30)
+forecast = model.predict(future)
+forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_csv("s3://data-lake/processed/AAPL_forecast.csv")
