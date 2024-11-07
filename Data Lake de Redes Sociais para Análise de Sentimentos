@@ -1,0 +1,18 @@
+# Exemplo básico de análise de sentimentos usando NLTK em Spark
+from pyspark.sql import SparkSession
+from textblob import TextBlob
+
+spark = SparkSession.builder.appName("SocialMediaSentiment").getOrCreate()
+
+# Função de análise de sentimento
+def analyze_sentiment(text):
+    return TextBlob(text).sentiment.polarity
+
+# UDF no Spark para aplicar a função de sentimentos
+from pyspark.sql.functions import udf
+from pyspark.sql.types import FloatType
+
+sentiment_udf = udf(analyze_sentiment, FloatType())
+df_posts = spark.read.json("s3://data-lake/raw/social_posts.json")
+df_posts = df_posts.withColumn("sentiment_score", sentiment_udf(df_posts["text"]))
+df_posts.write.mode("overwrite").parquet("s3://data-lake/processed/social_sentiments.parquet")
