@@ -1,0 +1,14 @@
+# Exemplo básico de carga de dados em Spark
+from pyspark.sql import SparkSession
+
+# Inicializando o Spark
+spark = SparkSession.builder.appName("EcommerceDataLake").getOrCreate()
+
+# Carregar dados de vendas
+df_sales = spark.read.csv("s3://data-lake/raw/sales_data.csv", header=True, inferSchema=True)
+
+# Pré-processamento
+df_sales = df_sales.withColumn("total_price", df_sales["quantity"] * df_sales["price"])
+
+# Salvar na camada de armazenamento processada
+df_sales.write.mode("overwrite").parquet("s3://data-lake/processed/sales_data.parquet")
