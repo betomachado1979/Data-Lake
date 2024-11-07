@@ -1,0 +1,13 @@
+# Exemplo básico de análise de logs em Spark
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import regexp_extract
+
+spark = SparkSession.builder.appName("WebServerLogAnalysis").getOrCreate()
+
+# Carregar e processar logs
+log_schema = "ip STRING, timestamp STRING, request STRING, status INT, size INT"
+df_logs = spark.read.csv("s3://data-lake/raw/logs/*.log", schema=log_schema, sep=" ")
+
+# Filtrar por status 404 (não encontrado)
+df_404_errors = df_logs.filter(df_logs["status"] == 404)
+df_404_errors.write.mode("overwrite").parquet("s3://data-lake/processed/404_errors.parquet")
